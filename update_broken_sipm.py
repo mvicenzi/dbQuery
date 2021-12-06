@@ -65,6 +65,16 @@ def update_sipm_in_scintillator(scintillator, channel, new_sipm):
     scintillator[3] = new_sipm
     return scintillator
 
+# prepare a new sipm entry
+def build_new_sipm(serial_number, voltage):
+
+    sipm = []
+    sipm.append(serial_number)
+    sipm.append(voltage)
+    sipm.append(0.0000000298) # average value
+    sipm.append("Hamamatsu inspection")
+    return sipm
+
 #----------------------------------------------------------------#
 def main():
 
@@ -75,24 +85,31 @@ def main():
     pathfile = os.path.abspath(sys.argv[1])
     dirpath, filename = os.path.split(pathfile)
     outpath = os.path.join(dirpath,"updated_scin_entries.csv")
+    sipmpath = os.path.join(dirpath,"new_sipms.csv")
 
     # open output file
     outfile = open(outpath ,"w")
+    sipmfile = open(sipmpath,"w")
 
     reader = csv.reader(infile, delimiter=",", quoting=csv.QUOTE_MINIMAL)
     writer = csv.writer(outfile, quoting=csv.QUOTE_MINIMAL)
+    newwriter = csv.writer(sipmfile, quoting=csv.QUOTE_MINIMAL)
 
-    # write header in output file
+    # write header in output files
     first_row = "scin_barcode,scin_prod,scin_sipm_r,scin_sipm_l,scin_test,light_y,attenu_t,attenu_l"
     first_row = first_row.split(",")
     writer.writerow(first_row)
+
+    first_sipm_row = "serial_num,voltage,dark_curr,comment"
+    first_sipm_row = first_sipm_row.split(",")
+    newwriter.writerow(first_sipm_row)
 
     # iterate over all lines in input file
     for row in reader:
         crt_barcode = row[0]
         channel = int(row[1])
         new_sipm = int(row[2])
-        Vop = float(row[3])
+        voltage = float(row[3])
 
         bar = get_bar_from_channel(channel)
         scin_barcode = find_scintillator(crt_barcode,bar)
@@ -102,8 +119,11 @@ def main():
             update_sipm_in_scintillator(scintillator, channel, new_sipm)
             writer.writerow(scintillator)
         else:
-            #you should create a new csv to add to the sipm table
-            pass 
+            # first create a new sipm entry to add to the sipm table
+            sipm = build_new_sipm(new_sipm, voltage)
+            newwriter.writerow(sipm)
+            update_sipm_in_scintillator(scintillator, channel, new_sipm)
+            writer.writerow(scintillator)
 
 if __name__ == "__main__":
     main()
