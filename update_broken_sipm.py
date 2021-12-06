@@ -1,9 +1,11 @@
 # This script is used to update SiPM entries in Scintillator table
 # Author: mvicenzi
 #
-# Input: csv file with "crtbarcode,channel,newsipm"
+# Input: csv file with "crtbarcode,channel,newsipm,Vop"
 # Output: csv file with update scintillator entry to upload to db
-
+#
+# TODO: add creation of sipm entry if new sipm is not in table
+#
 from DataLoader3 import DataLoader, DataQuery
 import os, sys
 import csv
@@ -90,6 +92,7 @@ def main():
         crt_barcode = row[0]
         channel = int(row[1])
         new_sipm = int(row[2])
+        Vop = float(row[3])
 
         bar = get_bar_from_channel(channel)
         scin_barcode = find_scintillator(crt_barcode,bar)
@@ -98,6 +101,9 @@ def main():
         if is_sipm_in_table(new_sipm):
             update_sipm_in_scintillator(scintillator, channel, new_sipm)
             writer.writerow(scintillator)
+        else:
+            #you should create a new csv to add to the sipm table
+            pass 
 
 if __name__ == "__main__":
     main()
