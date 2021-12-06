@@ -1,9 +1,8 @@
 # This script is used to update SiPM entries in Scintillator table
 # Author: mvicenzi
 #
-# TODO LIST:
-# take as input csv file with list of "crtbarcode,channel,newsipm"
-# write to updated scintillator rows to output (or use directly DataLoader??)
+# Input: csv file with "crtbarcode,channel,newsipm"
+# Output: csv file with update scintillator entry to upload to db
 
 from DataLoader3 import DataLoader, DataQuery
 import os, sys
