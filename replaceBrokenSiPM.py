@@ -1,11 +1,12 @@
 # This script is used to update SiPM entries in Scintillator table
+# replacing the broken ones with the new records
+#
 # Author: mvicenzi
 #
 # Input: csv file with "crtbarcode,channel,newsipm,Vop"
-# Output: csv file with update scintillator entry to upload to db
+# Output: csv file with update scintillator entries to upload to db
 #
-# TODO: add creation of sipm entry if new sipm is not in table
-#
+
 from DataLoader3 import DataLoader, DataQuery
 import os, sys
 import csv
