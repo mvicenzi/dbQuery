@@ -72,7 +72,7 @@ def build_new_sipm(serial_number, voltage):
     sipm = []
     sipm.append(serial_number)
     sipm.append(voltage)
-    sipm.append(0.0000000298) # average value
+    sipm.append(0.0) # no value available
     sipm.append("Hamamatsu inspection")
     return sipm
 
