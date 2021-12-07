@@ -1,9 +1,12 @@
-# This script is used to find and mark them SiPM that broke
+# This script is used to create a list of all the SiPMs that were
+# damaged during shipping and replaced at FNAL
+#
 # Author: mvicenzi
 #
 # Inputs: csv file with "crtbarcode,channel,newsipm,Vop" + backup scintillator table
-# Output: csv file with entris of broken SiPM
+# Output: csv file with entries of broken SiPM
 #
+
 from DataLoader3 import DataLoader, DataQuery
 import os, sys
 import csv
@@ -28,14 +31,19 @@ def find_scintillator(crt_barcode,bar_number):
     return scin_barcode[0]
 
 # get old sipm information from backup table
-def get_sipm_serialnum(scin_barcode, channel, backup_reader):
+def get_sipm_serialnum(scin_barcode, channel, backup_data):
 
-    for row in backup_reader:
-        if row[0] == scin_barcode:
-                if (channel%2==0):
-                    return row[2]
-                else:
-                    return row[3]
+    serial_num = 0
+    for item in backup_data:
+        #print(row[0])
+        if item[0] == scin_barcode:
+                if (channel%2==0): # even channel is R
+                    serial_num = item[2]
+                    break
+                else:              # odd channel is L
+                    serial_num = item[3]
+                    break
+    return serial_num
 
 # convert channel to bar number
 def get_bar_from_channel(channel):
@@ -48,8 +56,18 @@ def get_bar_from_channel(channel):
 # prepare a new sipm entry
 def get_sipm_info(serial_number):
 
-    sipm = dataQuery.query(database=dBname, table=sipmTable, columns="*", where="serial_num:eq:"+serial_number)
+    sipm = dataQuery.query(database=dBname, table=sipmTable, columns="serial_num,voltage,dark_curr,comment",
+                           where="serial_num:eq:"+str(serial_number))
     return sipm[0].split(",")
+
+# get backup data (not to read too many times the file)
+def extract_backup_data(backupfile):
+
+    data = []
+    backup_reader = csv.reader(backupfile, delimiter=",", quoting=csv.QUOTE_MINIMAL)
+    for row in backup_reader:
+        data.append(row[:4])
+    return data
 
 #----------------------------------------------------------------#
 def main():
@@ -67,13 +85,14 @@ def main():
     outfile = open(outpath ,"w")
 
     reader = csv.reader(infile, delimiter=",", quoting=csv.QUOTE_MINIMAL)
-    backup_reader = csv.reader(infile, delimiter=",", quoting=csv.QUOTE_MINIMAL)
     writer = csv.writer(outfile, quoting=csv.QUOTE_MINIMAL)
 
     # write header in output files
     first_sipm_row = "serial_num,voltage,dark_curr,comment"
     first_sipm_row = first_sipm_row.split(",")
     writer.writerow(first_sipm_row)
+
+    backup_data = extract_backup_data(backupfile)
 
     # iterate over all lines in input file
     for row in reader:
@@ -82,7 +101,7 @@ def main():
 
         bar = get_bar_from_channel(channel)
         scin_barcode = find_scintillator(crt_barcode,bar)
-        broken_serial_num = get_sipm_serialnum(scin_barcode, channel, backup_reader)
+        broken_serial_num = get_sipm_serialnum(scin_barcode, channel, backup_data)
 
         broken_sipm = get_sipm_info(broken_serial_num)
         writer.writerow(broken_sipm)
