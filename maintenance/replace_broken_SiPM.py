@@ -15,7 +15,6 @@ import csv
 # Main configuration parameters to query database
 #---------------------------------------------------------------#
 queryUrl = "https://dbdata0vm.fnal.gov:9443/QE/hw/app/SQ/query"
- #queryUrl = "https://dbdata0vm.fnal.gov:9090/hw/app/SQ/query"
 dBname = "icarus_hardware_prd"
 crtTable = "crtmodule"
 scinTable = "scintillator"

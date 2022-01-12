@@ -4,7 +4,7 @@
 # Author: mvicenzi
 #
 # Inputs: crtbarcode
-# Output: total cable length, time delay
+# Output: total cable length
 
 from DataLoader3 import DataLoader, DataQuery
 import os, sys
@@ -14,7 +14,6 @@ import csv
 # Main configuration parameters to query database
 #---------------------------------------------------------------#
 queryUrl = "https://dbdata0vm.fnal.gov:9443/QE/hw/app/SQ/query"
- #queryUrl = "https://dbdata0vm.fnal.gov:9090/hw/app/SQ/query"
 dBname = "icarus_hardware_prd"
 crtTable = "crtmodule"
 cableTable = "crtcable"
@@ -27,7 +26,7 @@ def find_feb(crt_barcode):
     feb_barcode = dataQuery.query(database=dBname, table=crtTable, columns="feb_barcode",where='crt_barcode:eq:'+crt_barcode)
     return feb_barcode[0]
 
-# find cable id of giving timing_type arriving at FEB
+# find cable id of given timing_type arriving at FEB
 def find_cable(feb_barcode, timing_type):
 
     cable_id = dataQuery.query(database=dBname, table=cableTable, columns="cable_id",
