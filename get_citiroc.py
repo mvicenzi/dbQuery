@@ -7,8 +7,7 @@
 # Output: config file
 
 from DataLoader3 import DataLoader, DataQuery
-import os, sys
-import csv
+import sys
 
 #---------------------------------------------------------------#
 # Main configuration parameters to query database
