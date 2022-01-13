@@ -1,10 +1,9 @@
-# This script write the Citiroc configuration file for a given FEB,
+# This script writes the CITIROC configuration file for a given FEB,
 # using SiPM info from ICARUS hardware database
 #
-# Author: Umut Kose
-# (converted into python by mvicenzi)
+# Author: Umut Kose (converted in Python by mvicenzi)
 #
-# Inputs: feb_barcode
+# Inputs: feb_number,dac,dac_tune,HGPreamp,LGPreamp,Amplifier,OR32,enabled_chs
 # Output: config file
 
 from DataLoader3 import DataLoader, DataQuery
@@ -22,6 +21,22 @@ febTable = "crtfeb"
 sipmTable = "topcrt_sipm"
 dataQuery = DataQuery(queryUrl)
 #---------------------------------------------------------------#
+#---------------------------------------------------------------#
+
+def usage():
+    print("Missing required parameters:")
+    print("get_citiroc.py [feb_number] [dac] [dac_tune] [HGPreamp] [LGPreamp] [OR32] [Amplifier] [ChA ChB ..]")
+    print("       'feb_number' - FEB number, eg. 1")
+    print("              'dac' - DAC [default: 230]")
+    print("         'dac_tune' - Adding to SiPM overvoltage in mV [default: 0]")
+    print("         'HGPreamp' - High-Gain Preamplifier [default: 51]")
+    print("         'LGPreamp' - Low-Gain Preamplifier [default: 51]")
+    print("             'OR32' - enabled/disabled [default: disabled]")
+    print("        'Amplifier' - allenabled/disabled/partenabled [default: allenabled]")
+    print("       'ChA ChB ..' - Enable individual channels, if Amplifier is partenabled")
+
+#-----------------------------------------------------------------#
+#-----------------------------------------------------------------#
 
 # returns MAC address and HV voltage of FEB
 def find_feb_info(feb_barcode):
@@ -68,12 +83,15 @@ def find_sipm_info(feb_barcode):
 
     return sipm_channels
 
+#-----------------------------------------------------------------#
+#-----------------------------------------------------------------#
+
 # returns a 32-bit string in case of partially enabled channel
-def set_partially_enabled(enable_string, parpreamp):
+def set_partially_enabled(enable_string, enabled_channels):
 
     string_list = list(enable_string)
-    for channel in parpreamp:
-        string_list[channel] = 1
+    for channel in enabled_channels:
+        string_list[channel] = "1"
 
     return "".join(string_list)
 
@@ -85,20 +103,40 @@ def compute_gain_bias(feb_voltage, sipm_voltage, dac_tune):
     return gain_bias
 
 #----------------------------------------------------------------#
+#----------------------------------------------------------------#
 def main():
 
-    feb = 1
+    # parse input parameters
+    inputs = sys.argv
+
+    if(len(inputs) < 8):
+        usage()
+        sys.exit()
+
+    feb = int(inputs[1])
+    dac = int(inputs[2])
+    dac_tune = float(inputs[3])
+    hgpreamp = int(inputs[4])
+    lgpreamp = int(inputs[5])
+
+    or32 = inputs[6]
+    if or32 not in ["enabled","disabled"]:
+        usage()
+        sys.exit()
+
+    preamp = inputs[7]
+    if preamp not in ["allenabled","disabled","partenabled"]:
+        usage()
+        sys.exit()
+
+    enabled_channels = []
+    if(len(inputs) > 8):
+        for input in inputs[8:]:
+            enabled_channels.append(int(input))
+
+
     feb_barcode = "FEB"+str(feb).zfill(5)
     feb_mac, feb_voltage = find_feb_info(feb_barcode)
-
-    dac_threshold = 230
-    dac_tune = 0
-    hgpreamp = 51
-    lgpreamp = 51
-    preamp = "allenabled"
-    or32 = "disabled"
-    parpreamp = [] #list of channel if partially enabled
-
 
     # set filename according to options
     filename = "CITIROC_SC_SN" + str(feb_mac).zfill(3)
@@ -117,18 +155,20 @@ def main():
     print("The following options will be used to create CITIROC configuration file")
     print("OR32: " + or32)
     print("Amplifier: " + preamp)
-    print("DAC: " + str(dac_threshold))
+    print("DAC: " + str(dac))
     print("Tune SiPM voltage: " + str(dac_tune))
     print("HG Preamp: " + str(hgpreamp))
     print("LG Preamp: " + str(lgpreamp)+"\n")
 
-    if( preamp == "partenabled" and len(parpreamp)<1 ):
+    if( preamp == "partenabled" and len(enabled_channels)<1 ):
         print("WARNING: 'Partially Enabled Amplifier' selected, but list of enabled channels is empty")
+        usage()
         sys.exit()
 
-    if( len(parpreamp) > 0 ):
-        for channel in parpreamp:
-            print( "Ch-" + str(channel).zfill(2) + " enabled\n")
+    if( len(enabled_channels) > 0 ):
+        for channel in enabled_channels:
+            print( "Ch-" + str(channel).zfill(2) + " enabled")
+        print("\n")
 
     print("Channel information from DB:")
     channel_voltages = find_sipm_info(feb_barcode)
@@ -154,8 +194,8 @@ def main():
     file.write("1 'PP: 4b_dac_t'\n")
 
     enable_string = "00000000000000000000000000000000"
-    if ( preamp == "partenabled "):
-        enable_string = set_partially_enabled(enable_string, parpreamp)
+    if ( preamp == "partenabled"):
+        enable_string = set_partially_enabled(enable_string, enabled_channels)
 
     file.write(enable_string + " ' Allows to Mask Discriminator (channel 0 to 31) [active low]'\n")
     file.write("1 ' Disable High Gain Track & Hold power pulsing mode (force ON)'\n")
@@ -199,7 +239,7 @@ def main():
         enable_amplifier = format(1,"b").zfill(3) #all are disabled
         if ( preamp == "allenabled"):
             enable_amplifier = format(0,"b").zfill(3)
-        elif ( pream == "partenabled" and (channel in parpreamp) ):
+        elif ( preamp == "partenabled" and (channel in enabled_channels) ):
             enable_amplifier = format(0,"b").zfill(3)
 
         file.write(preampHG+" "+preampLG+" "+enable_amplifier+" ' Ch"+str(channel)+"   PreAmp config (HG gain[5..0], LG gain [5..0], CtestHG, CtestLG, PA disabled)'\n")
@@ -213,8 +253,8 @@ def main():
     file.write("1 ' Enable DAC2'\n")
     file.write("1 ' Disable DAC2 power pulsing mode (force ON)'\n")
 
-    dac1 = format(dac_threshold,"b").zfill(10)
-    dac2 = format(dac_threshold,"b").zfill(10)
+    dac1 = format(dac,"b").zfill(10)
+    dac2 = format(dac,"b").zfill(10)
     file.write(dac1[0:2]+" "+dac1[2:6]+" "+dac1[6:10]+" ' 10-bit DAC1 (MSB-LSB): 00 1100 0000 for 0.5 p.e.'\n")
     file.write(dac2[0:2]+" "+dac2[2:6]+" "+dac2[6:10]+" ' 10-bit DAC2 (MSB-LSB): 00 1100 0000 for 0.5 p.e.'\n")
 
