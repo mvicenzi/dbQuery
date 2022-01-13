@@ -20,6 +20,10 @@ cableTable = "crtcable"
 dataQuery = DataQuery(queryUrl)
 #---------------------------------------------------------------#
 
+def usage():
+    print ("Missing required parameters!")
+    print ("python get_cable_length.py [crt_number] [cable_type]")
+
 # find feb barcode from crt barcode
 def find_feb(crt_barcode):
 
@@ -55,8 +59,16 @@ def compute_length_up_to(cable_id):
 #----------------------------------------------------------------#
 def main():
 
-    crt_barcode = "CRT00023"
-    timing_type = "T0"  #or T1
+    args = sys.argv
+    if (len(args) != 3):
+        usage()
+        sys.exit()
+
+    crt_barcode = "CRT" + str(args[1]).zfill(5)
+    timing_type = args[2]
+
+    print(crt_barcode, timing_type)
+
     feb_barcode = find_feb(crt_barcode)
 
     cable_id = find_cable(feb_barcode, timing_type)
