@@ -98,6 +98,8 @@ def set_partially_enabled(enable_string, enabled_channels):
 def compute_gain_bias(feb_voltage, sipm_voltage, dac_tune):
 
     overvoltage = 256 - int((float(feb_voltage) - float(sipm_voltage))/0.018 - dac_tune/18)
+    if(overvoltage < 0 ):
+        overvoltage = 0
     gain_bias = format(overvoltage,"b").zfill(8)
     return gain_bias
 
