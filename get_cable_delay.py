@@ -19,6 +19,9 @@ crtTable = "crtmodule"
 cableTable = "crtcable"
 dataQuery = DataQuery(queryUrl)
 #---------------------------------------------------------------#
+# RATED DELAY for timing cables
+rated_delay = 5.06 # ns/m
+#---------------------------------------------------------------#
 
 def usage():
     print ("Missing required parameters!")
@@ -52,9 +55,14 @@ def compute_length_up_to(cable_id):
     total_length = 0
     for i in range(1,int(pos)+1):
         cable = line + "-" + type + "-" + str(i).zfill(2)
-        total_length += get_cable_length(cable)
+        total_length += get_cable_length(cable) #in cm
 
-    return total_length
+    return total_length/100. #in meters
+
+# convert length into delay
+def compute_total_delay(length):
+    return format(rated_delay*length, '.2f') #in ns
+
 
 #----------------------------------------------------------------#
 def main():
@@ -73,8 +81,11 @@ def main():
 
     cable_id = find_cable(feb_barcode, timing_type)
     length = compute_length_up_to(cable_id)
+    delay = compute_total_delay(length)
 
-    print("Total length is " + str(length) + " mm")
+    print("Rated delay: " + str(rated_delay) + " ns/m")
+    print("Total length is " + str(length) + " m")
+    print("Total delay is " + str(delay) + " ns")
 
 if __name__ == "__main__":
     main()
