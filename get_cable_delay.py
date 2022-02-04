@@ -1,10 +1,10 @@
-# This script returs the lenght of the timing cable from
+# This script returs the lenght and delay of the timing cable from
 # the timing distribution box to the CRT module
 #
 # Author: mvicenzi
 #
 # Inputs: crtbarcode
-# Output: total cable length
+# Output: total cable length, total cable delay
 
 from DataLoader3 import DataLoader, DataQuery
 import os, sys
@@ -20,6 +20,7 @@ cableTable = "crtcable"
 dataQuery = DataQuery(queryUrl)
 #---------------------------------------------------------------#
 # RATED DELAY for timing cables
+#---------------------------------------------------------------#
 rated_delay = 5.06 # ns/m
 #---------------------------------------------------------------#
 
