@@ -12,6 +12,7 @@ from __future__ import print_function
 import sys, os, datetime
 import psycopg2
 import sqlite3
+import re #regex
 from   DataLoader3 import DataLoader, DataQuery
 
 # Set up the columns for the tables
@@ -163,13 +164,15 @@ def copyTable(postGres, dbCurs, dbName, table, columns):
     lastIdx = len(query)-1;
     for rowIdx in range(len(query)):
 
-        ### FIX THIS----> for module table, "created_by" colums has strings
-        ### with commas in them for multiple people (eg: Francesco,Valerio)
-        ### ---> this gets splitted and it shouldn't
         rowList = query[rowIdx].split(',')
-        
+        # exception for column "created_by" in table crtmodule
+        # which shouldn't get splitted despite having commas in it
+        if table == "crtmodule":
+            # regex witchcraft from
+            # https://stackoverflow.com/questions/43067373/split-by-comma-and-how-to-exclude-comma-from-quotes-in-split
+            rowList = re.split(r",(?=(?:[^\"']*[\"'][^\"']*[\"'])*[^\"']*$)",query[rowIdx])
+
         if len(rowList) != len(columns):
-            print(rowList)
             print("Length mismatch! Will skip this row (",rowIdx,"/",lastIdx,")")
             continue
 
