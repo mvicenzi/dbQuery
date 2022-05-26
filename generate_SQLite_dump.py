@@ -199,7 +199,7 @@ def copyTable(postGres, dbCurs, dbName, table, columns):
     createString += setForeignKeys(table)
     createString += ")"
 
-    print(createString)
+    #print(createString)
     dbCurs.execute(createString)
     query = postGres.query(database=dbName, table=table, columns="*")
 
@@ -215,7 +215,8 @@ def copyTable(postGres, dbCurs, dbName, table, columns):
             rowList = re.split(r",(?=(?:[^\"']*[\"'][^\"']*[\"'])*[^\"']*$)",query[rowIdx])
 
         if len(rowList) != len(columns):
-            print("Length mismatch! Will skip this row (",rowIdx,"/",lastIdx,")")
+            if rowIdx != lastIdx:
+                print("Length mismatch! Will skip this row (",rowIdx,"/",lastIdx,")")
             continue
 
         insertString = "INSERT INTO " + table + " VALUES ("
