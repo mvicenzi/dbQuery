@@ -1,5 +1,15 @@
 import sqlite3
 import csv
+import datetime
+
+### ----------------------------------------------
+### CONFIG
+user = "mvicenzi"
+current_time = datetime.datetime.now()
+tz_offset = "-0600"
+time = current_time.strftime('%m/%d/%Y %H:%M:%S') + tz_offset
+
+### ----------------------------------------------
 
 def add_table_and_data_from_csv_to_existing_db(csv_file, db_path, new_table_name, source_table_name):
     # Connect to the existing SQLite database
@@ -9,22 +19,23 @@ def add_table_and_data_from_csv_to_existing_db(csv_file, db_path, new_table_name
     # Get the data types of columns from the source table
     cursor.execute(f"PRAGMA table_info({source_table_name});")
     column_info = cursor.fetchall()
-    column_data_types = {}
-    for info in column_info:
-        column_data_types[info[1]] = info[2]
 
+    # Create a new table in the existing database using the CSV header and data types from the source tale
+    create_table_sql = f"CREATE TABLE {new_table_name} ({', '.join([f'{info[1]} {info[2]}' for info in column_info])});"
+    
+    cursor.execute(create_table_sql)
     # Read the CSV file and retrieve the header (column names)
     with open(csv_file, 'r') as csvfile:
         csv_reader = csv.reader(csvfile)
         header = next(csv_reader)
-
-        # Create a new table in the existing database using the CSV header and data types from the source table
-        create_table_sql = f"CREATE TABLE {new_table_name} ({', '.join([f'{name} {column_data_types[name]}' for name in header])});"
-        cursor.execute(create_table_sql)
-        
         # Insert data from the CSV file into the new table
-        insert_sql = f"INSERT INTO {new_table_name} VALUES ({', '.join(['?']*len(header))});"
+        insert_sql = f"INSERT INTO {new_table_name} VALUES ({', '.join(['?']*len(column_info))});"
         for row in csv_reader:
+	    #insert missing columns value into row
+            row.insert(12,time) # create_time
+            row.insert(13,'') # update_user
+            row.insert(14,'') # update_time
+            row.insert(15,user) # create_user
             cursor.execute(insert_sql, row)
 
     # Commit changes and close the connection
