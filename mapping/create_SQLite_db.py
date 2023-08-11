@@ -6,8 +6,8 @@ import datetime
 ### CONFIG
 user = "mvicenzi"
 current_time = datetime.datetime.now()
-tz_offset = "-0600"
-time = current_time.strftime('%m/%d/%Y %H:%M:%S') + tz_offset
+tz_offset = "-06:00"
+time = current_time.strftime('%m/%d/%Y %H:%M:%S.%f') + tz_offset
 
 ### ----------------------------------------------
 
@@ -33,9 +33,11 @@ def add_table_and_data_from_csv_to_existing_db(csv_file, db_path, new_table_name
         for row in csv_reader:
 	    #insert missing columns value into row
             row.insert(12,time) # create_time
-            row.insert(13,'') # update_user
-            row.insert(14,'') # update_time
+            row.insert(13,'None') # update_user
+            row.insert(14,'None') # update_time
             row.insert(15,user) # create_user
+            for r in row:
+                print(type(r))
             cursor.execute(insert_sql, row)
 
     # Commit changes and close the connection
