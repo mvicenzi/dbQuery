@@ -20,10 +20,18 @@ def add_table_and_data_from_csv_to_existing_db(csv_file, db_path, new_table_name
     cursor.execute(f"PRAGMA table_info({source_table_name});")
     column_info = cursor.fetchall()
 
-    # Create a new table in the existing database using the CSV header and data types from the source tale
-    create_table_sql = f"CREATE TABLE {new_table_name} ({', '.join([f'{info[1]} {info[2]}' for info in column_info])});"
-    
+    # Create a new table in the existing database using the columns name and data types from the source table
+    columns_sql_statements = []
+    for info in column_info:
+        constraint = ""
+        if info[1] == "pmt_id":
+            constraint = "PRIMARY KEY"
+        if info[1] == "channel_id" or info[1] == "hv_cable_label" or info[1] == "signal_cable_label":
+            constraint = "UNIQUE"
+        columns_sql_statements.append(f'{info[1]} {info[2]} {constraint}')
+    create_table_sql = f"CREATE TABLE {new_table_name} ({', '.join([f'{statement}' for statement in columns_sql_statements])});"
     cursor.execute(create_table_sql)
+
     # Read the CSV file and retrieve the header (column names)
     with open(csv_file, 'r') as csvfile:
         csv_reader = csv.reader(csvfile)
@@ -36,8 +44,6 @@ def add_table_and_data_from_csv_to_existing_db(csv_file, db_path, new_table_name
             row.insert(13,'None') # update_user
             row.insert(14,'None') # update_time
             row.insert(15,user) # create_user
-            for r in row:
-                print(type(r))
             cursor.execute(insert_sql, row)
 
     # Commit changes and close the connection
