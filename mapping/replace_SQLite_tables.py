@@ -19,7 +19,7 @@ def table_exists(table_name, cursor):
 ### ----------------------------------------------
 ### ----------------------------------------------
 
-def replace_table(db_path, table_name, csv_file):
+def replace_table(db_path, table_name, csv_file, old_cables=False):
 
     # Connect to the existing SQLite database
     conn = sqlite3.connect(db_path)
@@ -37,7 +37,9 @@ def replace_table(db_path, table_name, csv_file):
         
         columns_sql_statements = []
         for i, column in enumerate(header):
-            # skip column "new_signal_cable_label": we will use this values to fill the "signal_cable_label" column instead
+            # skip column "new_signal_cable_label": we want only the "signal_cable_label" column
+	    # for newer tables that will be filled with the values from the new column
+            # but that's a problem for the next loop
             if column == "new_signal_cable_label":
                 continue
         
@@ -57,8 +59,11 @@ def replace_table(db_path, table_name, csv_file):
         insert_sql = f"INSERT INTO {table_name} VALUES ({', '.join(['?']*len(columns_sql_statements))});"
 	
         # need to skip the "signal_cable_label" column and use the data from "new_signal_cable_label" instead 
+	# or viceversa if you want to use old cable labels!
         # the two are one after the other, so it's easy to just skip one.
         skip_index = header.index('signal_cable_label')
+        if old_cables:
+            skip_index = header.index('new_signal_cable_label')
         
         for row in csv_reader:
             nrow = row[:skip_index] + row[skip_index + 1:]
@@ -153,7 +158,7 @@ print_table_info(db_path)
 
 csv_file = 'PMT_MAPPING-MAPPING_JAN052022.csv'
 table_name = 'pmt_placements'
-replace_table(db_path, table_name, csv_file)
+replace_table(db_path, table_name, csv_file, old_cables=True)
 csv_file = 'PMT_MAPPING-Mapping_August_2023.csv'
 table_name = 'pmt_placements_23Aug2023'
 replace_table(db_path, table_name, csv_file)
@@ -163,4 +168,4 @@ replace_table(db_path, table_name, csv_file)
 
 
 print_table_info(db_path)
-print_table_contents(db_path, table_name)
+#print_table_contents(db_path, table_name)
